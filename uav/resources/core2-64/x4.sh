@@ -1,0 +1,9 @@
+#! /bin/bash
+
+if [ -f /proc/xenomai/version ];then
+	EXEC=./uavcoop_rt
+else
+	EXEC=./uavcoop_nrt
+fi
+
+$EXEC -n x4_0 -t x4_simu -a 127.0.0.1 -p 9000 -l /tmp -x setup_x4.xml -s 127.0.0.1 -v dsp_stub

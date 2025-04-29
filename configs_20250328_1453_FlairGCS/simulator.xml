@@ -1,0 +1,42 @@
+<!DOCTYPE remote_ui_xml>
+<root name="simulator">
+ <TabWidget name="Main_TabWidget">
+  <Tab name="uav_0">
+   <TabWidget name="tabs">
+    <Tab name="sampling">
+     <DoubleSpinBox value="0.001" name="Tech (s):"/>
+    </Tab>
+    <Tab name="optitrack">
+     <CheckBox value="1" name="enabled"/>
+    </Tab>
+    <Tab name="init">
+     <Vector3DSpinBox value_x="-1.5" value_y="0" value_z="-1" name="position"/>
+     <SpinBox value="90" name="yaw (deg):"/>
+    </Tab>
+    <Tab name="model">
+     <DoubleSpinBox value="1.2" name="mass:"/>
+     <DoubleSpinBox value="0.2" name="arm length:"/>
+     <DoubleSpinBox value="0.001" name="k_mot:"/>
+     <DoubleSpinBox value="0.001" name="c_mot:"/>
+     <DoubleSpinBox value="0.01" name="f_air_vert:"/>
+     <DoubleSpinBox value="0.4" name="f_air_lat:"/>
+     <DoubleSpinBox value="0.006" name="j_roll:"/>
+     <DoubleSpinBox value="0.006" name="j_pitch:"/>
+     <DoubleSpinBox value="0.1" name="j_yaw:"/>
+     <SpinBox value="100" name="motor timeout:"/>
+    </Tab>
+    <Tab name="visual">
+     <SpinBox value="255" name="arm color (R):"/>
+     <SpinBox value="0" name="arm color (G):"/>
+     <SpinBox value="0" name="arm color (B):"/>
+    </Tab>
+    <Tab name="us">
+     <Vector3DSpinBox value_x="0" value_y="0" value_z="0.04" name="position"/>
+     <Vector3DSpinBox value_x="0" value_y="0" value_z="1" name="direction"/>
+     <DoubleSpinBox value="6" name="range:"/>
+    </Tab>
+   </TabWidget>
+  </Tab>
+ </TabWidget>
+ <PushButton value="0" name="save config on target (simulator)"/>
+</root>
