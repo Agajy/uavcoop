@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
 #ifdef GL
   us_gl = new SimuUsGL(drone, "us", 0,0);
   cam_bas = new SimuCameraGL(drone, "bottom camera", 320, 240, 640, 0, 0,0);
-  cam_avant = new SimuCameraGL(drone, "front camera", 320, 240, 640, 240, 0,0);
+  cam_avant = new SimuCameraGL(drone, "front camera", 320, 240, 640, 240, 0,1);
 
 
 
