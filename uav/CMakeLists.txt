@@ -21,6 +21,7 @@ SET(SRC_FILES
         src/streaming/Streaming.cpp
         src/streaming/StreamingFilter.cpp
         src/streaming/ImageStreamer.cpp
+        src/tcp_command/CommandServer.cpp
 
 )
 

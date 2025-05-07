@@ -23,6 +23,7 @@
 // #include "streaming/Streaming.h"
 // #include <Camera.h>
 #include "streaming/ImageStreamer.h"
+#include "tcp_command/CommandServer.h"
 
 
 using namespace TCLAP;
@@ -62,17 +63,11 @@ int main(int argc, char* argv[]) {
     TargetEthController *controller=new TargetEthController("Dualshock3",ds3port);
     test_fleet* demo=new test_fleet(controller);//,listeningPort);//,name_ugv,listeningPort);
 
+    // Création du serveur reception command
+    CommandServer* commandServerUAV;
+    string portCommand = "62732";
+    commandServerUAV = new CommandServer(nullptr,name_uav,streamingIp,portCommand);
 
-    // Création du serveur d'image
-   
-
-    // UavNavigation* demo=new UavNavigation(controller,streamingIp);
-//     TimerThread controllerwithtimer(demo);
-
-    // Lancement du TimerThread dans un thread dédié
-//     std::thread test_fleet([&demo]() {
-//         demo->timerrun();
-//     });
     ImageStreamServer* imageServer;
     flair::sensor::Camera* camera=drone->GetVerticalCamera();
     imageServer = new ImageStreamServer(nullptr,camera, "ImageServer", camera->Width(), camera->Height(), streamingIp);
@@ -90,12 +85,27 @@ int main(int argc, char* argv[]) {
     }
 
     imageServer->Start();  // Lancement du thread
+    
+    // Initialiser le serveur avant de démarrer le thread
+    if (commandServerUAV->initialize()) {
+        // Configuration du callback si nécessaire
+        commandServerUAV->setCommandCallback([](float v1, float v2, float v3) {
+            std::cout << "Received commands: " << v1 << ", " << v2 << ", " << v3 << std::endl;
+        });
+    
+        // Démarrer le thread seulement si l'initialisation a réussi
+        commandServerUAV->Start();
+    } else {
+        std::cerr << "Failed to initialize command server" << std::endl;
+    }
 
     std::cout << " le serveur tourne..." << std::endl;
     demo->Start();
     demo->Join();
 
     imageServer->Join();
+    commandServerUAV->Join();
+    delete commandServerUAV;
     delete imageServer;
     delete manager;
 
