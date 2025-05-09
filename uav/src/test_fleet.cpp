@@ -1,18 +1,19 @@
-//  created:    2011/05/01
-//  filename:   test_fleet.cpp
+//  created:    2025/03/01
+//  filename:   test_fleet.h
 //
-//  author:     Guillaume Sanahuja
+//  author:     Aurelien Garreau
 //              Copyright Heudiasyc UMR UTC/CNRS 7253
 //
 //  version:    $Id: $
 //
-//  purpose:    demo cercle avec optitrack
+//  purpose:    
 //
 //
 /*********************************************************************/
 
 #include "test_fleet.h"
 #include "read_csv.h"
+#include "tcp_command/CommandServer.h"
 #include<unistd.h>
 #include <TargetController.h>
 #include <Uav.h>
@@ -49,7 +50,7 @@ using namespace flair::meta;
 
 //,uint16_t listeningPort): UavStateMachine(controller), behaviourMode(BehaviourMode_t::Default), vrpnLost(false) {
 
-test_fleet::test_fleet(TargetController *controller): UavStateMachine(controller), behaviourMode(BehaviourMode_t::Default), vrpnLost(false), running(true) {
+test_fleet::test_fleet(TargetController *controller, const std::string& name, const std::string& Ip, const std::string& Port): UavStateMachine(controller), behaviourMode(BehaviourMode_t::Default), vrpnLost(false), running(true) {
     Uav* uav=GetUav();
 
     VrpnClient* vrpnclient=new VrpnClient("vrpn", uav->GetDefaultVrpnAddress(),80,uav->GetDefaultVrpnConnectionType());
@@ -62,15 +63,12 @@ test_fleet::test_fleet(TargetController *controller): UavStateMachine(controller
         uavVrpn = new MetaVrpnObject(uav->ObjectName());
     }
     
-    // targetVrpn=new MetaVrpnObject("ugv_0");
-
     //set vrpn as failsafe altitude sensor for mamboedu as us in not working well for the moment
     if(uav->GetType()=="mamboedu") {
       SetFailSafeAltitudeSensor(uavVrpn->GetAltitudeSensor());
     }
     
     getFrameworkManager()->AddDeviceToLog(uavVrpn);
-    // getFrameworkManager()->AddDeviceToLog(targetVrpn);
     vrpnclient->Start();
     
     uav->GetAhrs()->YawPlot()->AddCurve(uavVrpn->State()->Element(2),DataPlot::Green);
@@ -80,7 +78,8 @@ test_fleet::test_fleet(TargetController *controller): UavStateMachine(controller
     // startFollowUGV=new PushButton(GetButtonsLayout()->NewRow(),"follow_ugv");
     // stopFollowUGV=new PushButton(GetButtonsLayout()->LastRowLastCol(),"stop_follow_ugv");
     positionHold=new PushButton(GetButtonsLayout()->LastRowLastCol(),"position hold");
-    followPathUAV=new PushButton(GetButtonsLayout()->LastRowLastCol(),"follow path");
+    followPathUAV=new PushButton(GetButtonsLayout()->NewRow(),"follow path");
+    UAVControlTCP=new PushButton(GetButtonsLayout()->LastRowLastCol(),"UAV control by TCP");
 
     pathUAV = readcsv();
     path_length=pathUAV.size();
@@ -117,19 +116,30 @@ test_fleet::test_fleet(TargetController *controller): UavStateMachine(controller
 
     customOrientation=new AhrsData(this,"orientation");
 
-    // timerThread = std::thread(&test_fleet::timerrun, this);
-    // timerThread = new TimerThread(this, "TimerThread");
     v = new DoubleSpinBox(GetButtonsLayout()->NewRow(), "step*s", " step*s", 20, 100, 0.01);
 
+    // Création du serveur reception command
+    commandServerUAV = new CommandServer(nullptr,name,Ip,Port);
+
+    // Initialiser le serveur avant de démarrer le thread
+    if (commandServerUAV->initialize()) {
+        // Configuration du callback si nécessaire
+        commandServerUAV->setCommandCallback([](float v1, float v2, float v3) {
+            std::cout << "Received commands: " << v1 << ", " << v2 << ", " << v3 << std::endl;
+        });
+    
+        // Démarrer le thread seulement si l'initialisation a réussi
+        commandServerUAV->Start();
+    } else {
+        std::cerr << "Failed to initialize command server" << std::endl;
+    }
 
 }
 
 test_fleet::~test_fleet() {
     running = false;  // Signale au thread de s'arrêter
-    // if (timerThread.joinable()) {
-    //     timerThread.join();  // Attend la fin du thread
-    // }
-    // delete timerThread;
+    commandServerUAV->Join();
+    delete commandServerUAV;
 }
 
 
@@ -229,27 +239,14 @@ void test_fleet::PositionValues(Vector2Df &pos_error,Vector2Df &vel_error,float 
         yaw_ref=yawHold;
     }
 
-    // else if (behaviourMode==BehaviourMode_t::StopFollowUGV) {
-    //     pos_error=uav_2Dpos-posHold2;
-    //     vel_error=uav_2Dvel;
-    //     yaw_ref=yawHold;
-    // }
-    // else if (behaviourMode==BehaviourMode_t::FollowUGV) {
-    //     Vector3Df target_pos;
-    //     Vector2Df target_2Dpos;
+    else if (behaviourMode==BehaviourMode_t::UAVControlTCP) {
+        pos_error.x=commandServerUAV->getCommand1();
+        pos_error.y=commandServerUAV->getCommand2();
+        vel_error=uav_2Dvel;
+        yaw_ref=commandServerUAV->getCommand3();
+    }
 
-    //     targetVrpn->GetPosition(target_pos);
-    //     target_pos.To2Dxy(target_2Dpos);
-
-    //     pos_error=uav_2Dpos-target_2Dpos;
-    //     vel_error=uav_2Dvel;
-    //     yaw_ref=yawHold;
-    // } 
     else if (behaviourMode==BehaviourMode_t::FollowPathUAV){
-        // Vector3Df posHold_3D;
-        // targetVrpn->GetPosition(posHold_3D);
-        // Vector2Df uav_2Dpos(posHold_3D.x, posHold_3D.y);
-
 
         if (path_init==false){   
             float distance = std::sqrt(std::pow(uav_2Dpos.x - pathUAV[0].first, 2) + 
@@ -371,7 +368,7 @@ void test_fleet::SignalEvent(Event_t event) {
 }
 
 void test_fleet::ExtraSecurityCheck(void) {
-    if ((!vrpnLost) && ((behaviourMode==BehaviourMode_t::Circle) || (behaviourMode==BehaviourMode_t::PositionHold) || (behaviourMode==BehaviourMode_t::FollowPathUAV))) {//||(behaviourMode==BehaviourMode_t::StopFollowUGV))) {
+    if ((!vrpnLost) && ((behaviourMode==BehaviourMode_t::Circle) || (behaviourMode==BehaviourMode_t::PositionHold) || (behaviourMode==BehaviourMode_t::FollowPathUAV) || (behaviourMode==BehaviourMode_t::UAVControlTCP))) {//||(behaviourMode==BehaviourMode_t::StopFollowUGV))) {
         // if (!targetVrpn->IsTracked(500)) {
         //     Thread::Err("VRPN, target lost\n");
         //     vrpnLost=true;
@@ -391,14 +388,7 @@ void test_fleet::ExtraCheckPushButton(void) {
     if(startCircle->Clicked()) {
         StartCircle();
     }
-    // if(startFollowUGV->Clicked()) {
-    //     Thread::Info("test_fleet: start follow ugv\n");
-    //     VrpnFollowUGV();
-    // }
-    // if(stopFollowUGV->Clicked()) {
-    //     Thread::Info("test_fleet: stop follow ugv\n");
-    //     VrpnStopFollowUGV();
-    // }
+
     if(stopCircle->Clicked()) {
         StopCircle();
 
@@ -411,6 +401,9 @@ void test_fleet::ExtraCheckPushButton(void) {
         path_init = false;
         VrpnFollowPath();
 
+    }
+    if(UAVControlTCP->Clicked()){
+        ControledByTCP();
     }
 }
 
@@ -425,6 +418,10 @@ void test_fleet::ExtraCheckJoystick(void) {
     if(GetTargetController()->ButtonClicked(4) && GetTargetController()->ButtonClicked(9)) {
         StartCircle();
 
+    }
+    //Circle
+    if(GetTargetController()->ButtonClicked(4) ){
+        ControledByTCP();
     }
 
     //R1 and Triangle
@@ -454,7 +451,6 @@ void test_fleet::StartCircle(void) {
     Vector3Df uav_pos,target_pos;
     Vector2Df uav_2Dpos,target_2Dpos;
 
-    // targetVrpn->GetPosition(target_pos);
     target_pos.To2Dxy(target_2Dpos);
     circle->SetCenter(target_2Dpos);
 
@@ -473,7 +469,6 @@ void test_fleet::StopCircle(void) {
         return;
     }
     circle->FinishTraj();
-    //GetJoystick()->Rumble(0x70);
     Thread::Info("test_fleet: finishing circle\n");
 }
 
@@ -497,22 +492,31 @@ void test_fleet::VrpnPositionHold(void) {
     Thread::Info("test_fleet: holding position\n");
 }
 
+void test_fleet::ControledByTCP(void) {
+    if( behaviourMode==BehaviourMode_t::UAVControlTCP) {
+        Thread::Warn("test_fleet: already in TCP mode\n");
+        return;
+    }
+    Quaternion vrpnQuaternion;
+    uavVrpn->GetQuaternion(vrpnQuaternion);
+        yawHold=vrpnQuaternion.ToEuler().yaw;
+
+    Vector3Df vrpnPosition;
+    uavVrpn->GetPosition(vrpnPosition);
+    vrpnPosition.To2Dxy(posHold);
+
+    uX->Reset();
+    uY->Reset();
+    behaviourMode=BehaviourMode_t::UAVControlTCP;
+    SetOrientationMode(OrientationMode_t::Custom);
+    Thread::Info("test_fleet: UAV controlled by TCP\n");
+}
+
 void test_fleet::VrpnFollowPath(void) {
     if( behaviourMode==BehaviourMode_t::FollowPathUAV) {
         Thread::Warn("test_fleet: already in vrpn follow path mode\n");
         return;
     }
-    // if (SetThrustMode(ThrustMode_t::Custom))
-    // {
-    //     Thread::Info("test_fleet: already in custom thrust mode\n");
-    // }
-    // else
-    // {
-    //     Thread::Err("test_fleet: wrong\n");
-    //     return;
-    // }
-
-    // path_indice=0;
 	Quaternion vrpnQuaternion;
     uavVrpn->GetQuaternion(vrpnQuaternion);
 		yawHold=vrpnQuaternion.ToEuler().yaw;
@@ -530,44 +534,3 @@ void test_fleet::VrpnFollowPath(void) {
     
     Thread::Info("test_fleet: Follow path\n");
 }
-
-// void test_fleet::VrpnFollowUGV(void) {
-//     if( behaviourMode==BehaviourMode_t::FollowUGV) {
-//         Thread::Warn("test_fleet: already in vrpn position hold mode\n");
-//         return;
-//     }
-// 		Quaternion vrpnQuaternion;
-//     uavVrpn->GetQuaternion(vrpnQuaternion);
-// 		yawHold=vrpnQuaternion.ToEuler().yaw;
-
-//     Vector3Df vrpnPosition;
-//     uavVrpn->GetPosition(vrpnPosition);
-//     vrpnPosition.To2Dxy(posHold);
-
-//     uX->Reset();
-//     uY->Reset();
-//     behaviourMode=BehaviourMode_t::FollowUGV;
-//     SetOrientationMode(OrientationMode_t::Custom);
-//     Thread::Info("test_fleet: holding position\n");
-// }
-
-
-// void test_fleet::VrpnStopFollowUGV(void) {
-//     if( behaviourMode==BehaviourMode_t::StopFollowUGV) {
-//         Thread::Warn("test_fleet: already in vrpn position hold mode\n");
-//         return;
-//     }
-// 		Quaternion vrpnQuaternion;
-//     uavVrpn->GetQuaternion(vrpnQuaternion);
-// 		yawHold=vrpnQuaternion.ToEuler().yaw;
-
-//     Vector3Df vrpnPosition;
-//     uavVrpn->GetPosition(vrpnPosition);
-//     vrpnPosition.To2Dxy(posHold);
-
-//     uX->Reset();
-//     uY->Reset();
-//     behaviourMode=BehaviourMode_t::StopFollowUGV;
-//     SetOrientationMode(OrientationMode_t::Custom);
-//     Thread::Info("test_fleet: holding position\n");
-// }

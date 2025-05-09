@@ -23,7 +23,7 @@
 // #include "streaming/Streaming.h"
 // #include <Camera.h>
 #include "streaming/ImageStreamer.h"
-#include "tcp_command/CommandServer.h"
+
 
 
 using namespace TCLAP;
@@ -59,14 +59,11 @@ int main(int argc, char* argv[]) {
     manager->SetupUserInterface(xml_file);
     manager->SetupLogger(log_path);
 
+    string portCommand = "62732";
+
     Uav* drone=CreateUav(name_uav,type_uav);//,"use_camv=false use_camh=false");
     TargetEthController *controller=new TargetEthController("Dualshock3",ds3port);
-    test_fleet* demo=new test_fleet(controller);//,listeningPort);//,name_ugv,listeningPort);
-
-    // Création du serveur reception command
-    CommandServer* commandServerUAV;
-    string portCommand = "62732";
-    commandServerUAV = new CommandServer(nullptr,name_uav,streamingIp,portCommand);
+    test_fleet* demo=new test_fleet(controller, name_uav,streamingIp,portCommand);//,listeningPort);//,name_ugv,listeningPort);
 
     ImageStreamServer* imageServer;
     flair::sensor::Camera* camera=drone->GetVerticalCamera();
@@ -86,26 +83,11 @@ int main(int argc, char* argv[]) {
 
     imageServer->Start();  // Lancement du thread
     
-    // Initialiser le serveur avant de démarrer le thread
-    if (commandServerUAV->initialize()) {
-        // Configuration du callback si nécessaire
-        commandServerUAV->setCommandCallback([](float v1, float v2, float v3) {
-            std::cout << "Received commands: " << v1 << ", " << v2 << ", " << v3 << std::endl;
-        });
-    
-        // Démarrer le thread seulement si l'initialisation a réussi
-        commandServerUAV->Start();
-    } else {
-        std::cerr << "Failed to initialize command server" << std::endl;
-    }
-
     std::cout << " le serveur tourne..." << std::endl;
     demo->Start();
     demo->Join();
 
     imageServer->Join();
-    commandServerUAV->Join();
-    delete commandServerUAV;
     delete imageServer;
     delete manager;
 

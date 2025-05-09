@@ -1,12 +1,12 @@
-//  created:    2011/05/01
+//  created:    2025/03/01
 //  filename:   test_fleet.h
 //
-//  author:     Guillaume Sanahuja
+//  author:     Aurelien Garreau
 //              Copyright Heudiasyc UMR UTC/CNRS 7253
 //
 //  version:    $Id: $
 //
-//  purpose:    demo cercle avec optitrack
+//  purpose:    
 //
 //
 /*********************************************************************/
@@ -19,8 +19,7 @@
 // #include <thread>
 #include <Thread.h>
 #include <Matrix.h>
-// #include "TimerThread.h"
-
+#include "tcp_command/CommandServer.h"
 
 
 namespace flair {
@@ -39,12 +38,13 @@ namespace flair {
     }
     namespace core {
         class Thread;
+        class CommandServer;
     }
 }
 
 class test_fleet : public flair::meta::UavStateMachine {
     public:
-        test_fleet(flair::sensor::TargetController *controller);//,uint16_t listeningPort);//,std::string ugvName,uint16_t listeningPort);
+        test_fleet(flair::sensor::TargetController *controller, const std::string& name, const std::string& Ip, const std::string& Port);//,uint16_t listeningPort);//,std::string ugvName,uint16_t listeningPort);
         ~test_fleet();
 
         bool flag_followpath=false;
@@ -59,19 +59,16 @@ class test_fleet : public flair::meta::UavStateMachine {
             Default,
             PositionHold,
             Circle,
-            // FollowUGV,
-            // StopFollowUGV,
             FollowPathUAV,
+            UAVControlTCP,
         };
-        // BehaviourMode_t GetBehaviourMode(void);
-
+  
         BehaviourMode_t behaviourMode;
         bool vrpnLost;
         bool path_init;
 
         void VrpnPositionHold(void);//flight mode
-        // void VrpnFollowUGV(void);
-        // void VrpnStopFollowUGV(void);
+        void ControledByTCP(void);
         void VrpnFollowPath(void);
         void StartCircle(void);
         void StopCircle(void);
@@ -86,12 +83,10 @@ class test_fleet : public flair::meta::UavStateMachine {
         float ComputeCustomThrust(void);
         flair::core::Matrix *matrix_path;
         float thrust;
-        // std::thread timerThread;  // Ajout du thread comme membre
-        // TimerThread* timerThread;
         bool running;  // Flag pour arrêter proprement le thread
 
         float time;
-
+        float ex_tcp, ey_tcp, eyaw_tcp;
         flair::filter::Pid *uX, *uY;
         flair::filter::PidThrust *uZ_custom;
         flair::core::Vector2Df posHold;
@@ -100,11 +95,12 @@ class test_fleet : public flair::meta::UavStateMachine {
         int path_length;
         std::vector<std::pair<double, double>> pathUAV;
 
-        flair::gui::PushButton *startCircle,*stopCircle,*positionHold,*followPathUAV;//,*startFollowUGV, *stopFollowUGV, *followPathUAV;
+        flair::gui::PushButton *startCircle,*stopCircle,*positionHold,*followPathUAV, *UAVControlTCP;
         flair::meta::MetaVrpnObject *targetVrpn,*uavVrpn;
         flair::filter::TrajectoryGenerator2DCircle *circle;
         flair::core::AhrsData *customReferenceOrientation,*customOrientation;
         flair::gui::DoubleSpinBox *v;
+        flair::core::CommandServer *commandServerUAV;
 };
 
 #endif // CIRCLEFOLLOWER_H
