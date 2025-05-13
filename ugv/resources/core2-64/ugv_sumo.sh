@@ -6,4 +6,4 @@ else
 	EXEC=./test_fleet_ugv_nrt
 fi
 
-$EXEC -n ugv_0 -t sumo -a 127.0.0.1 -p 9000 -l /tmp -x setup_sumo.xml
+$EXEC -n ugv -t sumo -a 127.0.0.1 -p 9000 -l /tmp -x setup_sumo.xml

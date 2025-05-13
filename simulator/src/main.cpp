@@ -12,6 +12,7 @@
 /*********************************************************************/
 
 #include <tclap/CmdLine.h>
+#include "tcp_optitrack/optitrack_server.h"
 #include <Simulator.h>
 #include "FourWheelRobot.h"
 #include "ArenaGround.h"
@@ -139,7 +140,6 @@ int main(int argc, char* argv[]) {
 
   // man = new Man("target",1);
 #endif
-
   simu->RunSimu();
 
   delete simu;

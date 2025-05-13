@@ -71,6 +71,12 @@ public:
      */
     bool hasConnectedClient() const { return clientSocket != nullptr; }
 
+    bool validateCommands(bool valid);
+    /**
+     * Get the command values
+     * @return true if command values are valid
+     */
+
 protected:
     /**
      * Thread run method - handles connections and message processing
@@ -98,7 +104,9 @@ private:
     float command2;               ///< Second command value
     float command3;               ///< Third command value
     std::function<void(float, float, float)> commandCallback;  ///< Callback for received commands
+    
 
+    bool in_good_mode=false;    ///< Flag to indicate if commands are valid
     // Constants
     static constexpr size_t MAX_BUFFER_SIZE = 256;     ///< Maximum message buffer size
     static constexpr int ACCEPT_TIMEOUT_MS = 50;       ///< Accept timeout in milliseconds

@@ -12,11 +12,13 @@
 /*********************************************************************/
 
 #include "UgvNavigation.h"
+#include "tcp_optitrack/optitrack_server.h"
 #include <FrameworkManager.h>
 #include <UgvFactory.h>
 #include <stdio.h>
 #include <tclap/CmdLine.h>
 #include <TargetEthController.h>
+
 
 using namespace TCLAP;
 using namespace std;
@@ -48,10 +50,26 @@ int main(int argc, char* argv[]) {
     TargetEthController *controller=new TargetEthController("Dualshock3",ds3port);
     UgvNavigation* demo=new UgvNavigation(name,controller);
 
-    demo->Start();
-    demo->Join();
+    vector<string> ugv_vector, uav_vector;
+    ugv_vector.push_back("ugv");
+    uav_vector.push_back("uav");
+    PositionServer* optitrack = new PositionServer(nullptr, uav_vector, ugv_vector, "127.0.0.1","62731");
 
+    if (!optitrack->initialize()) {
+        std::cerr << "Échec de l'initialisation du serveur d'image." << std::endl;
+        return -1;
+    }
+    optitrack->Start();  // Lancement du thread
+
+
+    demo->Start();
+
+    demo->Join();
     delete manager;
+    optitrack->Join();
+    delete optitrack;
+
+    
 }
 
 void parseOptions(int argc, char** argv) {

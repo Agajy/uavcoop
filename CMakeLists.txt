@@ -4,4 +4,4 @@ include($ENV{FLAIR_ROOT}/flair-src/cmake-modules/GlobalCmakeFlair.cmake)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/simulator)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/uav)
-# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ugv)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ugv)

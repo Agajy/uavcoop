@@ -214,10 +214,17 @@ void test_fleet::PositionValues(Vector2Df &pos_error,Vector2Df &vel_error,float 
     time=time+10.0; //+0.1s
     if (behaviourMode==BehaviourMode_t::FollowPathUAV){
         flag_followpath=true;
+        commandServerUAV->validateCommands(false);
+    }
+    else if (behaviourMode==BehaviourMode_t::UAVControlTCP){
+        commandServerUAV->validateCommands(true);
+
     }
     else {
         flag_followpath=false;
+        commandServerUAV->validateCommands(false);
     }
+
     Vector3Df uav_pos,uav_vel; // in VRPN coordinate system
     Vector2Df uav_2Dpos,uav_2Dvel; // in VRPN coordinate system
 

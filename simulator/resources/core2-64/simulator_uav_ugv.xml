@@ -2,7 +2,7 @@
 <!DOCTYPE remote_ui_xml>
 <root name="interface">
   <TabWidget name="Main_TabWidget">
-<Tab name="x4_0">
+<Tab name="uav">
       <TabWidget name="tabs">
         <Tab name="sampling">
           <DoubleSpinBox value="0.001" name="Tech (s):"/>

@@ -81,6 +81,11 @@ bool CommandServer::parseCommandMessage(const char* message, size_t length) {
     return false;
 }
 
+bool CommandServer::validateCommands(bool valid){
+    in_good_mode = valid;
+    return in_good_mode;
+}
+
 void CommandServer::Run(void) {
     std::cout << ObjectName() << ": Thread starting..." << std::endl;
 
@@ -116,9 +121,14 @@ void CommandServer::Run(void) {
                         std::cout << ObjectName() << ": Received: " << buffer << std::endl;
                         
                         if (parseCommandMessage(buffer, bytesRead)) {
-                            clientSocket->SendMessage("OK", 2, 25000000);
+                            // Vérifier si les commandes sont dans des limites acceptables
+                            if (in_good_mode) {
+                                clientSocket->SendMessage("True", 4, 25000000);
+                            } else {
+                                clientSocket->SendMessage("False", 5, 25000000);
+                            }
                         } else {
-                            clientSocket->SendMessage("ERR", 3, 25000000);
+                            clientSocket->SendMessage("False", 5, 25000000);
                         }
                     } else if (bytesRead == 0) {
                         std::cout << ObjectName() << ": Client disconnected" << std::endl;
