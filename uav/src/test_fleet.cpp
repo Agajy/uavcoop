@@ -348,7 +348,7 @@ void test_fleet::PositionValues(Vector2Df &pos_error,Vector2Df &vel_error,float 
 
 float test_fleet::ComputeCustomThrust(void)
 {
-    // cout << thrust << endl;
+    cout << thrust << endl;
     return thrust;
 }
 

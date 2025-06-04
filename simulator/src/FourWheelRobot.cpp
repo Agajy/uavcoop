@@ -329,8 +329,8 @@ void FourWheelRobot::ExtraDraw(void) {
   geo = getGui()->getSceneManager()->getGeometryCreator();
   
   ITexture *texture = getGui()->getTexture("ArUco_markers_4simulation.png");// place image inside falir/flair-src/models
-  IMesh* plane= geo->createPlaneMesh(irr::core::dimension2df(300,300));
-  MeshSceneNode* tag= new MeshSceneNode(this, plane, vector3df(0, 0, 55),vector3df(90, 0, 0),texture);
+  IMesh* plane= geo->createPlaneMesh(irr::core::dimension2df(300,400));
+  MeshSceneNode* tag= new MeshSceneNode(this, plane, vector3df(0, 0, 90),vector3df(90, 0, 0),texture);
   //creation d'un fond sinon le tag est transparent lorsqu'il est vu de l'autre coté
   // MeshSceneNode* fond= new MeshSceneNode(this, plane, vector3df(-150, 0, 0),vector3df(0, 0, 0));
   
