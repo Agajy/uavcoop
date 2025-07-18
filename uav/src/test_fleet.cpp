@@ -14,6 +14,7 @@
 #include "test_fleet.h"
 #include "read_csv.h"
 #include "tcp_command/CommandServer.h"
+// #include "tcp_rec_command/tcp_rec_command_server.h"
 #include<unistd.h>
 #include <TargetController.h>
 #include <Uav.h>
@@ -116,7 +117,8 @@ test_fleet::test_fleet(TargetController *controller, const std::string& name, co
 
     customOrientation=new AhrsData(this,"orientation");
 
-    v = new DoubleSpinBox(GetButtonsLayout()->NewRow(), "step*s", " step*s", 20, 100, 0.01);
+    v = new DoubleSpinBox(GetButtonsLayout()->NewRow(), "step*s", " step*s", 40, 100, 1.0,0.1,80);
+
 
     // Création du serveur reception command
     commandServerUAV = new CommandServer(nullptr,name,Ip,Port);
@@ -124,8 +126,8 @@ test_fleet::test_fleet(TargetController *controller, const std::string& name, co
     // Initialiser le serveur avant de démarrer le thread
     if (commandServerUAV->initialize()) {
         // Configuration du callback si nécessaire
-        commandServerUAV->setCommandCallback([](float v1, float v2, float v3) {
-            std::cout << "Received commands: " << v1 << ", " << v2 << ", " << v3 << std::endl;
+        commandServerUAV->setCommandCallback([](float v1, float v2, float v3, float v4) {
+            std::cout << "Received commands: " << v1 << ", " << v2 << ", " << v3 << ", " << v4 << std::endl;
         });
     
         // Démarrer le thread seulement si l'initialisation a réussi
@@ -134,12 +136,24 @@ test_fleet::test_fleet(TargetController *controller, const std::string& name, co
         std::cerr << "Failed to initialize command server" << std::endl;
     }
 
+    commandRecorder = new RecCommandServer(nullptr,name, "127.0.0.1","62733");
+
+    if (commandRecorder->initialize()) {
+        commandRecorder->Start();  // Lancement du thread
+
+    } else {
+        std::cerr << "Failed to initialize command recorder" << std::endl;
+    }
+   
+
 }
 
 test_fleet::~test_fleet() {
     running = false;  // Signale au thread de s'arrêter
     commandServerUAV->Join();
     delete commandServerUAV;
+    commandRecorder->Join();
+    delete commandRecorder;
 }
 
 
@@ -148,17 +162,19 @@ bool test_fleet::Get_flag_followpath(void){
 }
 
 const AhrsData *test_fleet::GetOrientation(void) const {
-    //get yaw from vrpn
-		Quaternion vrpnQuaternion;
-    uavVrpn->GetQuaternion(vrpnQuaternion);
-
+    Quaternion uavQuaternion(1,0,0,0);
+    
+    if (!line_detected) {
+        //get yaw from vrpn
+        uavVrpn->GetQuaternion(uavQuaternion);
+    }
     //get roll, pitch and w from imu
     Quaternion ahrsQuaternion;
     Vector3Df ahrsAngularSpeed;
     GetDefaultOrientation()->GetQuaternionAndAngularRates(ahrsQuaternion, ahrsAngularSpeed);
 
     Euler ahrsEuler=ahrsQuaternion.ToEuler();
-    ahrsEuler.yaw=vrpnQuaternion.ToEuler().yaw;
+    ahrsEuler.yaw=uavQuaternion.ToEuler().yaw;
     Quaternion mixQuaternion=ahrsEuler.ToQuaternion();
 
     customOrientation->SetQuaternionAndAngularRates(mixQuaternion,ahrsAngularSpeed);
@@ -182,6 +198,15 @@ AhrsData *test_fleet::GetReferenceOrientation(void) {
     Euler refAngles;
 
     PositionValues(pos_err, vel_err, yaw_ref);
+
+    // Record the command position and yaw for the command recorder
+    Vector3Df command_uav_pos;
+    command_uav_pos.x = pos_err.x;
+    command_uav_pos.y = pos_err.y;
+    command_uav_pos.z = 0.0f; // Assuming z is not used
+    Quaternion command_uav_yaw(0, 0, 0, refAngles.yaw); // Assuming no rotation for simplicity
+    commandRecorder->updatePosition(command_uav_pos, command_uav_yaw);
+
     refAngles.yaw=yaw_ref;
 
     uX->SetValues(pos_err.x, vel_err.x);
@@ -196,6 +221,10 @@ AhrsData *test_fleet::GetReferenceOrientation(void) {
 
     return customReferenceOrientation;
 }
+
+
+
+
 void test_fleet::newpoint(void){
     path_indice+=1;
 }
@@ -215,6 +244,7 @@ void test_fleet::PositionValues(Vector2Df &pos_error,Vector2Df &vel_error,float 
     if (behaviourMode==BehaviourMode_t::FollowPathUAV){
         flag_followpath=true;
         commandServerUAV->validateCommands(false);
+        line_detected=false;
     }
     else if (behaviourMode==BehaviourMode_t::UAVControlTCP){
         commandServerUAV->validateCommands(true);
@@ -222,6 +252,7 @@ void test_fleet::PositionValues(Vector2Df &pos_error,Vector2Df &vel_error,float 
     }
     else {
         flag_followpath=false;
+        line_detected=false;
         commandServerUAV->validateCommands(false);
     }
 
@@ -247,10 +278,19 @@ void test_fleet::PositionValues(Vector2Df &pos_error,Vector2Df &vel_error,float 
     }
 
     else if (behaviourMode==BehaviourMode_t::UAVControlTCP) {
-        pos_error.x=commandServerUAV->getCommand1();
-        pos_error.y=commandServerUAV->getCommand2();
-        vel_error=uav_2Dvel;
-        yaw_ref=commandServerUAV->getCommand3();
+        if (commandServerUAV->getCommand4() > 0.0) {
+            pos_error.x=commandServerUAV->getCommand1();
+            pos_error.y=commandServerUAV->getCommand2();
+            vel_error=uav_2Dvel;
+            yaw_ref=commandServerUAV->getCommand3();
+        
+            line_detected=true;
+            yaw_uav=0.0;
+        }
+        else {
+            line_detected=false;
+        }
+
     }
 
     else if (behaviourMode==BehaviourMode_t::FollowPathUAV){

@@ -22,8 +22,16 @@ SET(SRC_FILES
         src/streaming/StreamingFilter.cpp
         src/streaming/ImageStreamer.cpp
         src/tcp_command/CommandServer.cpp
+        src/tcp_rec_command/tcp_rec_command_server.cpp
+	# $ENV{FLAIR_ROOT}/flair-src/demos/DemoOpticalFlow/uav/src/DemoOpticalFlow.cpp
+        
 
 )
+
+
+# INCLUDE_DIRECTORIES(
+# 	$ENV{FLAIR_ROOT}/flair-src/demos/DemoOpticalFlow/uav/src
+# )
 
 install(DIRECTORY resources/core2-64/
         DESTINATION $ENV{FLAIR_ROOT}/flair-install/bin/demos/core2-64/uavcoop

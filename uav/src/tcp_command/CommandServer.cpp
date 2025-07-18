@@ -17,6 +17,7 @@ CommandServer::CommandServer(const Object* parent, const std::string& name,
       command1(0.0f),
       command2(0.0f),
       command3(0.0f),
+      command4(0.0f),
       isListening(false)
 {
     SetPeriodMS(50); // Run every 50ms for better responsiveness
@@ -56,22 +57,25 @@ bool CommandServer::parseCommandMessage(const char* message, size_t length) {
     
     std::string msgStr(message, length);
     std::istringstream iss(msgStr);
-    std::string token1, token2, token3;
+    std::string token1, token2, token3, token4;
     
     if (std::getline(iss, token1, ';') && 
         std::getline(iss, token2, ';') && 
-        std::getline(iss, token3, ';')) {
+        std::getline(iss, token3, ';') &&
+        std::getline(iss, token4, ';')) {
         try {
             float val1 = std::stof(token1);
             float val2 = std::stof(token2);
             float val3 = std::stof(token3);
+            float val4 = std::stof(token4);
             
             command1 = val1;
             command2 = val2;
             command3 = val3;
+            command4 = val4;
             
             if (commandCallback) {
-                commandCallback(command1, command2, command3);
+                commandCallback(command1, command2, command3,command4);
             }
             return true;
         } catch (const std::exception& e) {
@@ -156,13 +160,15 @@ void CommandServer::Run(void) {
     std::cout << ObjectName() << ": Thread stopped." << std::endl;
 }
 
-void CommandServer::setCommandCallback(std::function<void(float, float, float)> callback) {
+void CommandServer::setCommandCallback(std::function<void(float, float, float, float)> callback) {
     commandCallback = callback;
 }
 
 float CommandServer::getCommand1() const { return command1; }
 float CommandServer::getCommand2() const { return command2; }
 float CommandServer::getCommand3() const { return command3; }
+float CommandServer::getCommand4() const { return command4; }
+
 
 } // namespace core
 } // namespace flair

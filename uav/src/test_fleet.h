@@ -14,12 +14,13 @@
 #ifndef CIRCLEFOLLOWER_H
 #define CIRCLEFOLLOWER_H
 
-#include <UavStateMachine.h>
+#include "state_machine/UavStateMachine.h"
 #include <DoubleSpinBox.h>
 // #include <thread>
 #include <Thread.h>
 #include <Matrix.h>
 #include "tcp_command/CommandServer.h"
+#include "tcp_rec_command/tcp_rec_command_server.h"
 
 
 namespace flair {
@@ -77,14 +78,14 @@ class test_fleet : public flair::meta::UavStateMachine {
         void ExtraCheckJoystick(void) override;
         const flair::core::AhrsData *GetOrientation(void) const override;
         void AltitudeValues(float &z,float &dz) const override;
-        void PositionValues(flair::core::Vector2Df &pos_error,flair::core::Vector2Df &vel_error,float &yaw_ref);
+        void PositionValues(flair::core::Vector2Df &pos_error,flair::core::Vector2Df &vel_error,float &yaw_e);
         flair::core::AhrsData *GetReferenceOrientation(void) override;
         void SignalEvent(Event_t event) override;
         float ComputeCustomThrust(void);
         flair::core::Matrix *matrix_path;
         float thrust;
         bool running;  // Flag pour arrêter proprement le thread
-
+        bool line_detected=false;
         float time;
         float ex_tcp, ey_tcp, eyaw_tcp;
         flair::filter::Pid *uX, *uY;
@@ -101,6 +102,7 @@ class test_fleet : public flair::meta::UavStateMachine {
         flair::core::AhrsData *customReferenceOrientation,*customOrientation;
         flair::gui::DoubleSpinBox *v;
         flair::core::CommandServer *commandServerUAV;
+        RecCommandServer* commandRecorder;
 };
 
 #endif // CIRCLEFOLLOWER_H

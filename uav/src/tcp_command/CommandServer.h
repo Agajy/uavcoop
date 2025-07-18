@@ -39,7 +39,7 @@ public:
      * Set callback for received command values
      * @param callback Function to call when command is received (val1, val2, val3)
      */
-    void setCommandCallback(std::function<void(float, float, float)> callback);
+    void setCommandCallback(std::function<void(float, float, float, float)> callback);
     
     /**
      * Get the first received command value
@@ -58,6 +58,13 @@ public:
      * @return Third command value
      */
     float getCommand3() const;
+
+
+    /**
+     * Get the fourth received command value
+     * @return fourth command value
+     */
+    float getCommand4() const;
 
     /**
      * Check if server is currently listening
@@ -103,7 +110,8 @@ private:
     float command1;               ///< First command value
     float command2;               ///< Second command value
     float command3;               ///< Third command value
-    std::function<void(float, float, float)> commandCallback;  ///< Callback for received commands
+    float command4;               ///< Fourth command value
+    std::function<void(float, float, float, float)> commandCallback;  ///< Callback for received commands
     
 
     bool in_good_mode=false;    ///< Flag to indicate if commands are valid

@@ -98,7 +98,7 @@
           <CheckBox name="enabled" value="1"/>
         </Tab>
         <Tab name="init">
-          <Vector3DSpinBox name="position" value_x="2" value_y="0" value_z="-1"/>
+          <Vector3DSpinBox name="position" value_x="2" value_y="0" value_z="-3.5"/>
           <SpinBox name="yaw (deg):" value="90"/>
         </Tab>
         <Tab name="model">
