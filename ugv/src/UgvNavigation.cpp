@@ -62,6 +62,8 @@ UgvNavigation::UgvNavigation(string name,TargetController *controller): Thread(g
     startCircle=new PushButton(buttonslayout->NewRow(),"start_circle");
     stopCircle=new PushButton(buttonslayout->LastRowLastCol(),"stop_circle");
     stop=new PushButton(buttonslayout->LastRowLastCol(),"stop");
+    tcpCommand=new PushButton(buttonslayout->NewRow(),"TCP_Command");
+
 
     button_start_log = new PushButton(buttonslayout->NewRow(), "start_log");
     button_stop_log = new PushButton(buttonslayout->LastRowLastCol(), "stop_log");
@@ -93,9 +95,27 @@ UgvNavigation::UgvNavigation(string name,TargetController *controller): Thread(g
     message=new UdpSocket(ugv,"Message","127.255.255.255:20010",true);
     acc = 0; 
     steering = 0;
+
+    // Création du serveur reception command
+    commandServerUGV = new CommandServerUGV(nullptr,name,"127.0.0.1","62736");
+
+    // Initialiser le serveur avant de démarrer le thread
+    if (commandServerUGV->initialize()) {
+        // Configuration du callback si nécessaire
+        commandServerUGV->setCommandCallback([](float v1, float v2) {
+            std::cout << "Received commands: " << v1 << ", " << v2<< std::endl;
+        });
+    
+        // Démarrer le thread seulement si l'initialisation a réussi
+        commandServerUGV->Start();
+    } else {
+        std::cerr << "Failed to initialize command server" << std::endl;
+    }
 }
 
 UgvNavigation::~UgvNavigation() {
+    commandServerUGV->Join();
+    delete commandServerUGV;
 }
 
 void UgvNavigation::Run(void) {
@@ -112,12 +132,26 @@ void UgvNavigation::Run(void) {
         CheckJoystick();
         CheckPushButton();
         
-        if(behaviourMode==BehaviourMode_t::Manual) ComputeManualControls();
-        else if(behaviourMode==BehaviourMode_t::Circle) ComputeCircleControls();
-        else if(behaviourMode==BehaviourMode_t::Receive)ComputeReceiveControls();
+        if(behaviourMode==BehaviourMode_t::Manual) {
+            ComputeManualControls();
+            commandServerUGV->validateCommands(false);
+        }
+        else if(behaviourMode==BehaviourMode_t::Circle) {
+            ComputeCircleControls();
+            commandServerUGV->validateCommands(false);
+        }
+        else if(behaviourMode==BehaviourMode_t::Receive){
+            ComputeReceiveControls();
+            commandServerUGV->validateCommands(false);
+        }
+        else if(behaviourMode==BehaviourMode_t::TCPCommand) {
+            ComputeTCPCommands();
+            commandServerUGV->validateCommands(true);
+        }
         else {
             behaviourMode=BehaviourMode_t::Default;
             Defaultmode();
+            commandServerUGV->validateCommands(false);
 
         }
         WaitPeriod();
@@ -132,7 +166,7 @@ void UgvNavigation::CheckPushButton(void) {
     
   if (startCircle->Clicked() == true)
       StartCircle();
-        
+
   if (stopCircle->Clicked() == true)
       StopCircle();
 
@@ -141,6 +175,9 @@ void UgvNavigation::CheckPushButton(void) {
 
   if (button_kill->Clicked() == true)
       SafeStop();
+    
+  if (tcpCommand->Clicked() == true)
+      TCPCommand();
 }
 
 void UgvNavigation::CheckJoystick(void) {
@@ -198,6 +235,25 @@ void UgvNavigation::ComputeManualControls(void) {
     float turn=controller->GetAxisValue(0);
     GetUgv()->GetUgvControls()->SetControls(speed,turn);
   }
+
+void UgvNavigation::ComputeTCPCommands(void) {
+    Vector2Df pos_error , vel_error;
+    pos_error.x = commandServerUGV->getCommand1();
+    pos_error.y = commandServerUGV->getCommand2();
+
+    uX->SetValues(pos_error.x, vel_error.x);
+    uX->Update(GetTime());
+    uY->SetValues(pos_error.y, vel_error.y);
+    uY->Update(GetTime());
+
+    Quaternion vrpnQuaternion;
+    ugvVrpn->GetQuaternion(vrpnQuaternion);
+    float yaw=vrpnQuaternion.ToEuler().yaw;
+    float L=1;
+    float v= cosf(yaw)*uX->Output() + sinf(yaw)*uY->Output();
+    float w = -sinf(yaw)/l->Value()*uX->Output() + cosf(yaw)/l->Value()*uY->Output();
+    GetUgv()->GetUgvControls()->SetControls(-v,-w);
+    }
 
 void UgvNavigation::ComputeCircleControls(void) {
 
@@ -259,6 +315,22 @@ void UgvNavigation::StartCircle(void) {
     behaviourMode=BehaviourMode_t::Circle;
     Thread::Info("UgvNavigation: start circle\n");
     // message->SendMessage("StartCircle");
+  }
+}
+
+void UgvNavigation::TCPCommand() {
+    if(behaviourMode!=BehaviourMode_t::TCPCommand) {
+        Vector3Df ugv_pos;
+        Vector2Df ugv_2Dpos,target_2Dpos;
+        commandServerUGV->validateCommands(true);
+
+        ugvVrpn->GetPosition(ugv_pos);
+        ugv_pos.To2Dxy(ugv_2Dpos);
+
+        uX->Reset();
+        uY->Reset();
+        behaviourMode=BehaviourMode_t::TCPCommand;
+        Thread::Info("UgvNavigation: TCPCommand\n");
   }
 }
 

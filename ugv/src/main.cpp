@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 
     vector<string> ugv_vector, uav_vector;
     ugv_vector.push_back("ugv");
-    uav_vector.push_back("uav");
+    uav_vector.push_back("Drone_0");
     PositionServer* optitrack = new PositionServer(nullptr, uav_vector, ugv_vector, "127.0.0.1","62731");
 
     if (!optitrack->initialize()) {

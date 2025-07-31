@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <Vector3D.h>
+#include <Quaternion.h>
 
 
 namespace flair {
@@ -12,9 +14,9 @@ namespace flair {
     namespace core {
         class TcpSocket;
         class Thread;
+        typedef Vector3D<float> Vector3Df;
     }
 }
-
 
 struct ObjectPosition {
     std::string name;
@@ -22,15 +24,14 @@ struct ObjectPosition {
     float qx, qy, qz, qw;
 };
 
-class PositionServer : public flair::core::Thread {
+class RecCommandServer : public flair::core::Thread {
 public:
-    PositionServer(const flair::core::Object* parent, const std::vector<std::string>& names_uav,
-    const std::vector<std::string>& names_ugv, const std::string& Ip, const std::string& Port);
-    ~PositionServer();
+    RecCommandServer(const Object* parent,std::string name_object, const std::string& Ip, const std::string& Port);
+    ~RecCommandServer();
     
+
     bool initialize();
-    void updatePosition();
-    void transformPosition(ObjectPosition* pose);
+    void updatePosition(flair::core::Vector3Df pose, flair::core::Quaternion quaternion);
 
 protected:
     void Run(void) override;
@@ -41,9 +42,9 @@ private:
     std::string usedIp;
     std::string usedPort;
     bool isListening;
-    std::map<const std::string, flair::meta::MetaVrpnObject*> names;
-    std::map<std::string, ObjectPosition> positions;
+    ObjectPosition position;
     std::string serializePositions();
+
 };
 
 

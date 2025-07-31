@@ -15,10 +15,13 @@
 #define UgvNavigation_H
 
 #include <Thread.h>
+#include "tcp_command/CommandServerUGV.h"
+
 
 namespace flair {
     namespace core {
         class UdpSocket;
+        class CommandServerUGV;
     }
     namespace gui {
         class PushButton;
@@ -46,6 +49,7 @@ class UgvNavigation : public flair::core::Thread {
 	enum class BehaviourMode_t {
             Manual,
             Circle,
+            TCPCommand,
             Receive,
             Default
         };
@@ -55,6 +59,8 @@ class UgvNavigation : public flair::core::Thread {
         void StopCircle(void);
         void ComputeManualControls(void);
         void ComputeCircleControls(void);
+        void TCPCommand(void);
+        void ComputeTCPCommands(void);
         void SecurityCheck(void);
         void CheckMessages(void);
         void CheckJoystick(void);
@@ -63,7 +69,7 @@ class UgvNavigation : public flair::core::Thread {
         void Defaultmode(void);
 
         flair::filter::Pid *uX, *uY;
-        flair::gui::PushButton *startCircle,*stopCircle,*button_kill,*button_start_log,*button_stop_log, *stop;
+        flair::gui::PushButton *startCircle,*stopCircle,*button_kill,*button_start_log,*button_stop_log, *stop, *tcpCommand;
         flair::gui::DoubleSpinBox *l;
         flair::gui::DoubleSpinBox *xCircleCenter,*yCircleCenter;
         flair::meta::MetaVrpnObject *ugvVrpn;
@@ -72,7 +78,7 @@ class UgvNavigation : public flair::core::Thread {
         bool vrpnLost;
         flair::sensor::TargetController *controller;
         flair::core::UdpSocket *message;
-
+        flair::core::CommandServerUGV *commandServerUGV;
         float acc, steering;
 };
 

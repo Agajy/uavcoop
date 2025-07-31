@@ -86,6 +86,7 @@ class test_fleet : public flair::meta::UavStateMachine {
         float thrust;
         bool running;  // Flag pour arrêter proprement le thread
         bool line_detected=false;
+        bool no_opti = false;
         float time;
         float ex_tcp, ey_tcp, eyaw_tcp;
         flair::filter::Pid *uX, *uY;

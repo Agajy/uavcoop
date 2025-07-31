@@ -1,5 +1,5 @@
-#ifndef COMMAND_SERVER_H
-#define COMMAND_SERVER_H
+#ifndef COMMAND_SERVER_U_G_V_H
+#define COMMAND_SERVER_U_G_V_H
 
 #include <TcpSocket.h>
 #include <Thread.h>
@@ -12,7 +12,7 @@ namespace core {
 /**
  * Server class to handle command reception over TCP/IP
  */
-class CommandServer : public Thread {
+class CommandServerUGV : public Thread {
 public:
     /**
      * Constructor
@@ -21,13 +21,13 @@ public:
      * @param Ip IP address to listen on
      * @param Port Port to listen on
      */
-    CommandServer(const Object* parent, const std::string& name, 
+    CommandServerUGV(const Object* parent, const std::string& name, 
                  const std::string& Ip, const std::string& Port);
     
     /**
      * Destructor - ensures proper cleanup of resources
      */
-    ~CommandServer();
+    ~CommandServerUGV();
     
     /**
      * Initialize the server and start listening
@@ -39,7 +39,7 @@ public:
      * Set callback for received command values
      * @param callback Function to call when command is received (val1, val2, val3)
      */
-    void setCommandCallback(std::function<void(float, float, float, float, float)> callback);
+    void setCommandCallback(std::function<void(float, float)> callback);
     
     /**
      * Get the first received command value
@@ -52,25 +52,6 @@ public:
      * @return Second command value
      */
     float getCommand2() const;
-
-    /**
-     * Get the third received command value
-     * @return Third command value
-     */
-    float getCommand3() const;
-
-
-    /**
-     * Get the fourth received command value
-     * @return fourth command value
-     */
-    float getCommand4() const;
-
-    /**
-     * Get the fiveth received command value
-     * @return fiveth command value
-     */
-    float getCommand5() const;
 
     /**
      * Check if server is currently listening
@@ -115,10 +96,7 @@ private:
     // Command related members
     float command1;               ///< First command value
     float command2;               ///< Second command value
-    float command3;               ///< Third command value
-    float command4;               ///< Fourth command value
-    float command5;               ///< Fifth command value (optional)
-    std::function<void(float, float, float, float, float)> commandCallback;  ///< Callback for received commands
+    std::function<void(float, float)> commandCallback;  ///< Callback for received commands
     
 
     bool in_good_mode=false;    ///< Flag to indicate if commands are valid

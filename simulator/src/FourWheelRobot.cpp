@@ -119,14 +119,14 @@ void FourWheelRobot::Draw(void) {
   geo = getGui()->getSceneManager()->getGeometryCreator();
 
   colored_body = geo->createCubeMesh(vector3df(ToIrrlichtScale(1),ToIrrlichtScale(1),ToIrrlichtScale(1)));
-  colored_body->setBoundingBox(aabbox3df(0,0,0,1,1,1));//bug with bounding box? workaround is to reduce it... we use only wheel box
+  colored_body->setBoundingBox(aabbox3df(0,0,0,0.025,0.025,0.05));//bug with bounding box? workaround is to reduce it... we use only wheel box
   MeshSceneNode* mesh= new MeshSceneNode(this, colored_body);
   
-  IMesh *wheel = geo->createCylinderMesh(35, 10, 64, SColor(0, 0, 0, 0));
-  MeshSceneNode *rl_wheel = new MeshSceneNode(this, wheel, vector3df(-50, 50, -30),vector3df(0, 0, 0));
-  MeshSceneNode *rr_wheel = new MeshSceneNode(this, wheel, vector3df(-50, -50-10, -30),vector3df(0, 0, 0));
-  MeshSceneNode *fl_wheel = new MeshSceneNode(this, wheel, vector3df(50, 50, -30),vector3df(0, 0, 0));
-  MeshSceneNode *fr_wheel = new MeshSceneNode(this, wheel, vector3df(50, -50-10, -30),vector3df(0, 0, 0));
+  IMesh *wheel = geo->createCylinderMesh(30, 10, 64, SColor(0, 0, 0, 0));
+  MeshSceneNode *rl_wheel = new MeshSceneNode(this, wheel, vector3df(-50, 50, -25),vector3df(0, 0, 0));
+  MeshSceneNode *rr_wheel = new MeshSceneNode(this, wheel, vector3df(-50, -50-10, -25),vector3df(0, 0, 0));
+  MeshSceneNode *fl_wheel = new MeshSceneNode(this, wheel, vector3df(50, 50, -25),vector3df(0, 0, 0));
+  MeshSceneNode *fr_wheel = new MeshSceneNode(this, wheel, vector3df(50, -50-10, -25),vector3df(0, 0, 0));
   
  ExtraDraw();
 }
@@ -328,8 +328,8 @@ void FourWheelRobot::ExtraDraw(void) {
   const IGeometryCreator *geo;
   geo = getGui()->getSceneManager()->getGeometryCreator();
   
-  ITexture *texture = getGui()->getTexture("ArUco_markers_4simulation.png");// place image inside falir/flair-src/models
-  IMesh* plane= geo->createPlaneMesh(irr::core::dimension2df(300,400));
+  ITexture *texture = getGui()->getTexture("ArUco_id_3_4x4.png");// if the aruco is not working place image inside flair/flair-src/models. if you want to use another image, change the path here and in CMakeLists.txt
+  IMesh* plane= geo->createPlaneMesh(irr::core::dimension2df(90,90));
   MeshSceneNode* tag= new MeshSceneNode(this, plane, vector3df(0, 0, 90),vector3df(90, 0, 0),texture);
   //creation d'un fond sinon le tag est transparent lorsqu'il est vu de l'autre coté
   // MeshSceneNode* fond= new MeshSceneNode(this, plane, vector3df(-150, 0, 0),vector3df(0, 0, 0));

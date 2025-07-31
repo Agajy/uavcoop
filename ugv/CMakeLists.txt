@@ -11,7 +11,8 @@ include($ENV{FLAIR_ROOT}/flair-src/cmake-modules/GlobalCmakeFlair.cmake)
 SET(SRC_FILES
 	src/main.cpp
 	src/UgvNavigation.cpp
-        ./src/tcp_optitrack/optitrack_server.cpp
+        src/tcp_command/CommandServerUGV.cpp
+        src/tcp_optitrack/optitrack_server.cpp
 )
 
 install(DIRECTORY resources/core2-64/

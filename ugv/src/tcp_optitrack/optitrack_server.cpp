@@ -54,6 +54,25 @@ bool PositionServer::initialize() {
     }
 }
 
+void PositionServer::transformPosition(ObjectPosition* pose) {
+    ObjectPosition CopyPose;
+    CopyPose.name = pose->name;
+    CopyPose.x = pose->x;
+    CopyPose.y = pose->y;
+    CopyPose.z = pose->z;
+    CopyPose.qx = pose->qx;
+    CopyPose.qy = pose->qy;
+    CopyPose.qz = pose->qz;
+    CopyPose.qw = pose->qw;
+    pose->x = CopyPose.y;
+    pose->y = -CopyPose.z;
+    pose->z = -CopyPose.x;
+    pose->qx = CopyPose.qy;
+    pose->qy = -CopyPose.qz;
+    pose->qz = -CopyPose.qx;
+    pose->qw = CopyPose.qw; 
+}
+
 void PositionServer::updatePosition() {
     for (std::map<const std::string, MetaVrpnObject*>::iterator it=names.begin(); it!=names.end(); ++it) {
         Vector3Df position;
@@ -61,6 +80,7 @@ void PositionServer::updatePosition() {
         names[it->first]->GetPosition(position);
         names[it->first]->GetQuaternion(quaternion);
         ObjectPosition pos{it->first, position.x, position.y, position.z, quaternion.q1, quaternion.q2, quaternion.q3, quaternion.q0};
+        transformPosition(&pos);
         positions[it->first]=pos;
     }
 }

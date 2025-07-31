@@ -19,6 +19,10 @@ install(DIRECTORY resources/core2-64/
         FILES_MATCHING
 )
 
+# Dans votre CMakeLists.txt
+configure_file(./resources/ArUco_id_3_4x4.png 
+               $ENV{FLAIR_ROOT}/flair-src/models/ArUco_id_3_4x4.png COPYONLY)
+
 FLAIR_DEMO_HOST_CXX(${PROJECT_NAME} "${SRC_FILES}"
            DEST_DIR uavcoop
            COPY_RESOURCES

@@ -6,4 +6,4 @@ else
 	EXEC=./uavcoop_nrt
 fi
 
-$EXEC -n uav -t x4_simu -a 127.0.0.1 -p 9000 -l /tmp -x setup_x4.xml -s 127.0.0.1 -v dsp_stub
+$EXEC -n Drone_0 -t x4_simu -a 127.0.0.1 -p 9000 -l /tmp -x setup_x4.xml -s 127.0.0.1 -v dsp_stub
